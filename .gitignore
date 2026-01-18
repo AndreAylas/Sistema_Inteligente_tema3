@@ -13,5 +13,6 @@ __pycache__/
 
 # csv
 ejercicio2/*.csv
+ejercicio3/*.csv
 ejercicio2/data/
 *.csv
