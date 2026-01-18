@@ -10,3 +10,8 @@ __pycache__/
 
 # VSCode
 .vscode/
+
+# csv
+ejercicio2/*.csv
+ejercicio2/data/
+*.csv
