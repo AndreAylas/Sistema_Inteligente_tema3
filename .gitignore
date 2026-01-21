@@ -16,3 +16,4 @@ ejercicio2/*.csv
 ejercicio3/*.csv
 ejercicio2/data/
 *.csv
+.DS_Store
