@@ -163,3 +163,10 @@ def predict_example(model, text):
     probs = model.predict([text], verbose=0)[0]
     pred_id = int(np.argmax(probs))
     return pred_id, probs
+
+def main():
+    if not check_dataset_structure(DATA_DIR):
+        print("[INFO] Proceso terminado: estructura del dataset incorrecto")
+        return
+    texts, labels= load_texts_and_labels(DATA_DIR)
+    
