@@ -105,12 +105,13 @@ def split_data(texts,labels,train_ratio=0.8,val_ratio=0.1):
     print(f"[INFO] Split -> train: {len(X_train)}, val: {len(X_val)}, test: {len(X_test)}")
     return X_train, y_train, X_val, y_val, X_test, y_test
 
-def make_tf_dataset(texts,labels, batch_size, shuffle=False):
-    ds= tf.date.Dataset.from_tensor_slice((texts,labels))
+def make_tf_dataset(texts, labels, batch_size, shuffle=False):
+    ds = tf.data.Dataset.from_tensor_slices((texts, labels))
     if shuffle:
         ds = ds.shuffle(buffer_size=min(len(texts), 2000), seed=SEED, reshuffle_each_iteration=True)
     ds = ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
     return ds
+
 
 def build_vectorizer(max_tokens=MAX_TOKENS,seq_len=SEQ_LEN):
     vectorizer = tf.keras.layers.TextVectorization(
@@ -121,6 +122,11 @@ def build_vectorizer(max_tokens=MAX_TOKENS,seq_len=SEQ_LEN):
         split="whitespace"
     )
     return vectorizer
+
+def adapt_vectorizer(vectorizer, train_texts):
+    ds_text = tf.data.Dataset.from_tensor_slices(train_texts).batch(64)
+    vectorizer.adapt(ds_text)
+    print("[INFO] Vectorizer adaptado con train.")
 
 def build_model(vectorizer):
     inputs = tf.keras.Input(shape=(1,), dtype=tf.string, name="text")
@@ -160,9 +166,14 @@ def evaluate_model(model, test_ds):
 
 
 def predict_example(model, text):
+    # Si por error llega una lista (p.ej. ["texto..."]), nos quedamos con el primer elemento
+    if isinstance(text, list):
+        text = text[0]
+
     probs = model.predict([text], verbose=0)[0]
     pred_id = int(np.argmax(probs))
     return pred_id, probs
+
 
 def main():
     if not check_dataset_structure(DATA_DIR):
@@ -170,3 +181,48 @@ def main():
         return
     texts, labels= load_texts_and_labels(DATA_DIR)
     
+    if len(texts)==0:
+        print("[INFO] no se cargaron los textos, proceso terminado...")
+        return 
+    
+    # Split
+    X_train, y_train,X_val, y_val,X_test, y_test = split_data(texts, labels)
+
+    # Datasets
+
+    train_ds=make_tf_dataset(X_train, y_train, BATCH_SIZE, shuffle=True)
+    val_ds = make_tf_dataset(X_val, y_val, BATCH_SIZE, shuffle=False)
+    test_ds = make_tf_dataset(X_test, y_test, BATCH_SIZE, shuffle=False)
+
+    # Vectorizador
+    vectorizer = build_vectorizer()
+    adapt_vectorizer(vectorizer, X_train)
+
+    # Modelo
+
+    model= build_model(vectorizer)
+    model.summary()
+
+    # Entrenamiento
+
+    train_model(model, train_ds, val_ds)
+
+    # Evaluacion
+
+    evaluate_model(model, test_ds)
+
+    # Ejemplo
+
+    text_1 = X_test[1]
+
+    pred_id, probs = predict_example(model, text_1)
+
+    print("\n[INFO] Ejemplo de predicción (texto recortado):")
+    print(text_1[:300].replace("\n", " ") + " ...")
+    print("[INFO] Probabilidades:")
+    for i, cls in enumerate(CLASSES):
+        print(f"  - {cls}: {probs[i]:.4f}")
+    print(f"[INFO] Predicción: {CLASSES[pred_id]} | Real: {CLASSES[int(y_test[0])]}")
+
+if __name__ == "__main__":
+    main()
