@@ -27,16 +27,7 @@ def get_country(df,country_name="spain"):
 
 def clean_country(df_country):
     """
-        b) Limpia el DataFrame del país (España) según el enunciado:
-
-            i) Poner a 0 las celdas vacías en columnas numéricas.
-            ii) Convertir la columna 'date' a tipo fecha (datetime).
-            iii) Listar filas donde new_cases sea negativo.
-            iv) Comprobar duplicados y eliminarlos.
-
-        Devuelve:
-            - df_clean: DataFrame limpio
-            - negativos: DataFrame con filas new_cases < 0 (para mostrar/guardar si quieres)
+        b) Limpia el DataFrame del país (España) 
     """
     df_clean=df_country.copy()
     
@@ -74,7 +65,7 @@ def clean_country(df_country):
 
     return df_clean, negativos
     
-def save_data_frame(df, filename="covid_espana_limpio.xlsx"):
+def save_data_frame(df, filename="covid_espana.xlsx"):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     output_path = os.path.join(base_dir, filename)
 
@@ -84,7 +75,7 @@ def save_data_frame(df, filename="covid_espana_limpio.xlsx"):
     # Comprobación
     df_check = pd.read_excel(output_path)
     print("[INFO] Comprobación: leído de vuelta el Excel. Primeras 5 filas:")
-    print(df_check.head().to_string(index=False))
+
 
     return output_path
 if __name__ == '__main__':
