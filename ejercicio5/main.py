@@ -166,13 +166,23 @@ def evaluate_model(model, test_ds):
 
 
 def predict_example(model, text):
-    # Si por error llega una lista (p.ej. ["texto..."]), nos quedamos con el primer elemento
-    if isinstance(text, list):
+    # Normalizar: si llega como contenedor, tomar el primer elemento
+    if isinstance(text, (list, tuple, np.ndarray)):
+        if len(text) == 0:
+            raise ValueError("El texto de entrada está vacío.")
         text = text[0]
 
-    probs = model.predict([text], verbose=0)[0]
+    # Asegurar string puro
+    text = str(text)
+
+    # Keras: pasar batch como np.array (evita que lo interprete como list raro)
+    x = np.array([text], dtype=object)
+
+    probs = model.predict(x, verbose=0)[0]
     pred_id = int(np.argmax(probs))
     return pred_id, probs
+
+
 
 
 def main():
@@ -211,10 +221,13 @@ def main():
 
     evaluate_model(model, test_ds)
 
+    print("[DEBUG] type(X_test[0]) =", type(X_test[0]))
+
+
     # Ejemplo
 
-    text_1 = X_test[1]
-
+    text_1 = X_test[0]
+    
     pred_id, probs = predict_example(model, text_1)
 
     print("\n[INFO] Ejemplo de predicción (texto recortado):")
